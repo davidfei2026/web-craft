@@ -1,7 +1,13 @@
 import * as THREE from
     "https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js";
 
+
+// ============================================================
+// WEBCRAFT V2
+// ============================================================
+
 const game = document.getElementById("game");
+
 
 // ============================================================
 // SCENE
@@ -10,6 +16,7 @@ const game = document.getElementById("game");
 const scene = new THREE.Scene();
 
 scene.background = new THREE.Color(0x87ceeb);
+
 
 // ============================================================
 // CAMERA
@@ -21,6 +28,7 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     1000
 );
+
 
 // ============================================================
 // RENDERER
@@ -41,8 +49,9 @@ renderer.setPixelRatio(
 
 game.appendChild(renderer.domElement);
 
+
 // ============================================================
-// LIGHT
+// LIGHTING
 // ============================================================
 
 const sun = new THREE.DirectionalLight(
@@ -54,12 +63,13 @@ sun.position.set(20, 30, 10);
 
 scene.add(sun);
 
-scene.add(
-    new THREE.AmbientLight(
-        0xffffff,
-        0.6
-    )
+const ambient = new THREE.AmbientLight(
+    0xffffff,
+    0.6
 );
+
+scene.add(ambient);
+
 
 // ============================================================
 // BLOCK TYPES
@@ -88,6 +98,11 @@ const BLOCK_TYPES = [
     }
 ];
 
+
+// ============================================================
+// BLOCK MATERIALS
+// ============================================================
+
 const materials = BLOCK_TYPES.map(
     block =>
         new THREE.MeshLambertMaterial({
@@ -95,8 +110,18 @@ const materials = BLOCK_TYPES.map(
         })
 );
 
+
+// ============================================================
+// BLOCK GEOMETRY
+// ============================================================
+
 const blockGeometry =
-    new THREE.BoxGeometry(1, 1, 1);
+    new THREE.BoxGeometry(
+        1,
+        1,
+        1
+    );
+
 
 // ============================================================
 // WORLD
@@ -104,7 +129,17 @@ const blockGeometry =
 
 const blocks = [];
 
-function createBlock(x, y, z, type) {
+
+// ============================================================
+// CREATE BLOCK
+// ============================================================
+
+function createBlock(
+    x,
+    y,
+    z,
+    type
+) {
 
     const block =
         new THREE.Mesh(
@@ -119,6 +154,7 @@ function createBlock(x, y, z, type) {
     );
 
     block.userData.type = type;
+
     block.userData.isBlock = true;
 
     scene.add(block);
@@ -128,17 +164,27 @@ function createBlock(x, y, z, type) {
     return block;
 }
 
+
+// ============================================================
+// REMOVE BLOCK
+// ============================================================
+
 function removeBlock(block) {
 
     const index =
         blocks.indexOf(block);
 
     if (index !== -1) {
-        blocks.splice(index, 1);
+
+        blocks.splice(
+            index,
+            1
+        );
     }
 
     scene.remove(block);
 }
+
 
 // ============================================================
 // TERRAIN
@@ -146,14 +192,29 @@ function removeBlock(block) {
 
 const WORLD_SIZE = 24;
 
+
 function terrainHeight(x, z) {
 
     return Math.floor(
-        Math.sin(x * 0.25) * 1.2 +
-        Math.cos(z * 0.22) * 1.2 +
-        Math.sin((x + z) * 0.12)
+
+        Math.sin(
+            x * 0.25
+        ) * 1.2
+
+        +
+
+        Math.cos(
+            z * 0.22
+        ) * 1.2
+
+        +
+
+        Math.sin(
+            (x + z) * 0.12
+        )
     );
 }
+
 
 for (
     let x = -WORLD_SIZE;
@@ -168,7 +229,10 @@ for (
     ) {
 
         const height =
-            terrainHeight(x, z);
+            terrainHeight(
+                x,
+                z
+            );
 
         for (
             let y = -3;
@@ -178,14 +242,24 @@ for (
 
             let type;
 
-            if (y === height) {
-                type = 0; // grass
+            if (
+                y === height
+            ) {
+
+                type = 0;
+
             }
-            else if (y >= height - 2) {
-                type = 1; // dirt
+            else if (
+                y >= height - 2
+            ) {
+
+                type = 1;
+
             }
             else {
-                type = 2; // stone
+
+                type = 2;
+
             }
 
             createBlock(
@@ -198,14 +272,22 @@ for (
     }
 }
 
+
 // ============================================================
 // TREES
 // ============================================================
 
-function createTree(x, z) {
+function createTree(
+    x,
+    z
+) {
 
     const ground =
-        terrainHeight(x, z);
+        terrainHeight(
+            x,
+            z
+        );
+
 
     for (
         let y = 1;
@@ -220,6 +302,7 @@ function createTree(x, z) {
             3
         );
     }
+
 
     for (
         let dx = -2;
@@ -256,10 +339,12 @@ function createTree(x, z) {
     }
 }
 
+
 createTree(-8, -8);
 createTree(8, -7);
 createTree(-10, 8);
 createTree(9, 9);
+
 
 // ============================================================
 // PLAYER
@@ -267,13 +352,15 @@ createTree(9, 9);
 
 const player = {
 
-    position: new THREE.Vector3(
-        0,
-        6,
-        8
-    ),
+    position:
+        new THREE.Vector3(
+            0,
+            6,
+            8
+        ),
 
-    velocity: new THREE.Vector3(),
+    velocity:
+        new THREE.Vector3(),
 
     speed: 5,
 
@@ -282,9 +369,11 @@ const player = {
     onGround: false
 };
 
+
 camera.position.copy(
     player.position
 );
+
 
 // ============================================================
 // KEYBOARD
@@ -292,35 +381,55 @@ camera.position.copy(
 
 const keys = {};
 
+let selectedBlock = 0;
+
+
 window.addEventListener(
     "keydown",
     event => {
 
         keys[event.code] = true;
 
-        // 1-5 block selection
+
+        // NUMBER KEYS
 
         if (
-            event.code.startsWith("Digit")
+            event.code === "Digit1"
         ) {
 
-            const number =
-                Number(
-                    event.code.substring(5)
-                );
-
-            if (
-                number >= 1 &&
-                number <= 5
-            ) {
-
-                selectBlock(
-                    number - 1
-                );
-            }
+            selectBlock(0);
         }
 
-        // Jump
+        if (
+            event.code === "Digit2"
+        ) {
+
+            selectBlock(1);
+        }
+
+        if (
+            event.code === "Digit3"
+        ) {
+
+            selectBlock(2);
+        }
+
+        if (
+            event.code === "Digit4"
+        ) {
+
+            selectBlock(3);
+        }
+
+        if (
+            event.code === "Digit5"
+        ) {
+
+            selectBlock(4);
+        }
+
+
+        // JUMP
 
         if (
             event.code === "Space" &&
@@ -330,10 +439,12 @@ window.addEventListener(
             player.velocity.y =
                 player.jumpPower;
 
-            player.onGround = false;
+            player.onGround =
+                false;
         }
     }
 );
+
 
 window.addEventListener(
     "keyup",
@@ -343,11 +454,10 @@ window.addEventListener(
     }
 );
 
+
 // ============================================================
 // HOTBAR
 // ============================================================
-
-let selectedBlock = 0;
 
 function selectBlock(index) {
 
@@ -355,6 +465,7 @@ function selectBlock(index) {
         index < 0 ||
         index >= BLOCK_TYPES.length
     ) {
+
         return;
     }
 
@@ -376,19 +487,35 @@ function selectBlock(index) {
     );
 
     console.log(
-        "Selected block:",
+        "Selected:",
         BLOCK_TYPES[index].name
     );
 }
+
+
+selectBlock(0);
+
 
 // ============================================================
 // MOUSE LOOK
 // ============================================================
 
 let yaw = 0;
+
 let pitch = 0;
 
 let mouseLocked = false;
+
+
+renderer.domElement.addEventListener(
+    "click",
+    () => {
+
+        document.body.requestPointerLock();
+
+    }
+);
+
 
 document.addEventListener(
     "pointerlockchange",
@@ -401,18 +528,6 @@ document.addEventListener(
     }
 );
 
-// Click game to lock mouse
-
-renderer.domElement.addEventListener(
-    "click",
-    () => {
-
-        if (!mouseLocked) {
-
-            document.body.requestPointerLock();
-        }
-    }
-);
 
 document.addEventListener(
     "mousemove",
@@ -428,8 +543,10 @@ document.addEventListener(
         pitch -=
             event.movementY * 0.002;
 
+
         const limit =
             Math.PI / 2 - 0.05;
+
 
         pitch =
             Math.max(
@@ -442,20 +559,25 @@ document.addEventListener(
     }
 );
 
+
 // ============================================================
-// RAYCASTING
+// RAYCASTER
 // ============================================================
 
 const raycaster =
     new THREE.Raycaster();
 
-const screenCenter =
-    new THREE.Vector2(0, 0);
+const center =
+    new THREE.Vector2(
+        0,
+        0
+    );
+
 
 function getTargetBlock() {
 
     raycaster.setFromCamera(
-        screenCenter,
+        center,
         camera
     );
 
@@ -468,11 +590,13 @@ function getTargetBlock() {
     if (
         hits.length === 0
     ) {
+
         return null;
     }
 
     return hits[0];
 }
+
 
 // ============================================================
 // BREAK BLOCK
@@ -483,50 +607,53 @@ function breakBlock() {
     const hit =
         getTargetBlock();
 
-    if (!hit) {
 
-        console.log(
-            "No block targeted"
-        );
+    if (!hit) {
 
         return;
     }
+
 
     const block =
         hit.object;
 
-    // Don't remove bottom layer
 
     if (
         block.position.y <= -3
     ) {
+
         return;
     }
 
-    console.log(
-        "Breaking:",
-        block.position
-    );
 
-    removeBlock(block);
+    removeBlock(
+        block
+    );
 }
 
+
 // ============================================================
-// CHECK BLOCK LOCATION
+// BLOCK EXISTS
 // ============================================================
 
-function blockExists(position) {
+function blockExists(
+    position
+) {
 
     return blocks.some(
         block =>
+
             block.position.x ===
                 position.x &&
+
             block.position.y ===
                 position.y &&
+
             block.position.z ===
                 position.z
     );
 }
+
 
 // ============================================================
 // PLAYER COLLISION
@@ -537,39 +664,46 @@ function blockIntersectsPlayer(
 ) {
 
     const playerBox =
-        new THREE.Box3().setFromCenterAndSize(
+        new THREE.Box3();
 
-            player.position.clone().add(
-                new THREE.Vector3(
-                    0,
-                    -0.9,
-                    0
-                )
-            ),
+    playerBox.setFromCenterAndSize(
 
+        player.position.clone().add(
             new THREE.Vector3(
-                0.8,
-                1.8,
-                0.8
+                0,
+                -0.9,
+                0
             )
-        );
+        ),
+
+        new THREE.Vector3(
+            0.8,
+            1.8,
+            0.8
+        )
+    );
+
 
     const blockBox =
-        new THREE.Box3().setFromCenterAndSize(
+        new THREE.Box3();
 
-            position,
+    blockBox.setFromCenterAndSize(
 
-            new THREE.Vector3(
-                1,
-                1,
-                1
-            )
-        );
+        position,
+
+        new THREE.Vector3(
+            1,
+            1,
+            1
+        )
+    );
+
 
     return playerBox.intersectsBox(
         blockBox
     );
 }
+
 
 // ============================================================
 // PLACE BLOCK
@@ -580,45 +714,50 @@ function placeBlock() {
     const hit =
         getTargetBlock();
 
-    if (!hit) {
 
-        console.log(
-            "No block targeted"
-        );
+    if (!hit) {
 
         return;
     }
 
+
     const block =
         hit.object;
+
 
     const normal =
         hit.face.normal.clone();
 
-    // Convert face normal into
-    // world coordinates
 
     normal.transformDirection(
         block.matrixWorld
     );
 
+
     const position =
         block.position.clone();
 
-    position.add(normal);
 
-    // Round to exact block coordinates
+    position.add(
+        normal
+    );
+
 
     position.x =
-        Math.round(position.x);
+        Math.round(
+            position.x
+        );
 
     position.y =
-        Math.round(position.y);
+        Math.round(
+            position.y
+        );
 
     position.z =
-        Math.round(position.z);
+        Math.round(
+            position.z
+        );
 
-    // Don't place inside player
 
     if (
         blockIntersectsPlayer(
@@ -629,19 +768,16 @@ function placeBlock() {
         return;
     }
 
-    // Don't duplicate blocks
 
     if (
-        blockExists(position)
+        blockExists(
+            position
+        )
     ) {
 
         return;
     }
 
-    console.log(
-        "Placing:",
-        BLOCK_TYPES[selectedBlock].name
-    );
 
     createBlock(
         position.x,
@@ -651,15 +787,36 @@ function placeBlock() {
     );
 }
 
+
 // ============================================================
-// MOUSE BLOCK ACTIONS
+// MOUSE CONTROLS
 // ============================================================
 
-renderer.domElement.addEventListener(
+document.addEventListener(
     "mousedown",
     event => {
 
-        // Right click
+        if (
+            !mouseLocked
+        ) {
+
+            return;
+        }
+
+
+        // LEFT CLICK
+
+        if (
+            event.button === 0
+        ) {
+
+            event.preventDefault();
+
+            breakBlock();
+        }
+
+
+        // RIGHT CLICK
 
         if (
             event.button === 2
@@ -667,49 +824,45 @@ renderer.domElement.addEventListener(
 
             event.preventDefault();
 
-            if (mouseLocked) {
-                placeBlock();
-            }
-
-            return;
-        }
-
-        // Left click
-
-        if (
-            event.button === 0
-        ) {
-
-            if (mouseLocked) {
-                breakBlock();
-            }
+            placeBlock();
         }
     }
 );
 
-// Prevent browser context menu
 
-renderer.domElement.addEventListener(
+// ============================================================
+// RIGHT CLICK MENU
+// ============================================================
+
+document.addEventListener(
     "contextmenu",
     event => {
 
         event.preventDefault();
+
     }
 );
+
 
 // ============================================================
 // MOUSE WHEEL
 // ============================================================
 
-renderer.domElement.addEventListener(
+document.addEventListener(
     "wheel",
     event => {
 
-        if (!mouseLocked) {
+        if (
+            !mouseLocked
+        ) {
+
             return;
         }
 
-        if (event.deltaY > 0) {
+
+        if (
+            event.deltaY > 0
+        ) {
 
             selectedBlock++;
 
@@ -719,6 +872,7 @@ renderer.domElement.addEventListener(
             selectedBlock--;
         }
 
+
         if (
             selectedBlock < 0
         ) {
@@ -726,6 +880,7 @@ renderer.domElement.addEventListener(
             selectedBlock =
                 BLOCK_TYPES.length - 1;
         }
+
 
         if (
             selectedBlock >=
@@ -735,42 +890,64 @@ renderer.domElement.addEventListener(
             selectedBlock = 0;
         }
 
+
         selectBlock(
             selectedBlock
         );
     }
 );
 
+
 // ============================================================
-// MOVEMENT
+// PLAYER MOVEMENT
 // ============================================================
 
-function updatePlayer(delta) {
+function updatePlayer(
+    delta
+) {
 
     const movement =
         new THREE.Vector3();
 
-    if (keys["KeyW"]) {
+
+    if (
+        keys["KeyW"]
+    ) {
+
         movement.z -= 1;
     }
 
-    if (keys["KeyS"]) {
+
+    if (
+        keys["KeyS"]
+    ) {
+
         movement.z += 1;
     }
 
-    if (keys["KeyA"]) {
+
+    if (
+        keys["KeyA"]
+    ) {
+
         movement.x -= 1;
     }
 
-    if (keys["KeyD"]) {
+
+    if (
+        keys["KeyD"]
+    ) {
+
         movement.x += 1;
     }
+
 
     if (
         movement.lengthSq() > 0
     ) {
 
         movement.normalize();
+
 
         movement.applyAxisAngle(
             new THREE.Vector3(
@@ -781,10 +958,12 @@ function updatePlayer(delta) {
             yaw
         );
 
+
         player.position.x +=
             movement.x *
             player.speed *
             delta;
+
 
         player.position.z +=
             movement.z *
@@ -792,16 +971,19 @@ function updatePlayer(delta) {
             delta;
     }
 
-    // Gravity
+
+    // GRAVITY
 
     player.velocity.y -=
         20 * delta;
+
 
     player.position.y +=
         player.velocity.y *
         delta;
 
-    // Terrain floor
+
+    // GROUND
 
     const ground =
         terrainHeight(
@@ -813,11 +995,14 @@ function updatePlayer(delta) {
             )
         );
 
+
     const floor =
         ground + 2;
 
+
     if (
-        player.position.y < floor
+        player.position.y <
+        floor
     ) {
 
         player.position.y =
@@ -834,6 +1019,7 @@ function updatePlayer(delta) {
     }
 }
 
+
 // ============================================================
 // CAMERA
 // ============================================================
@@ -844,15 +1030,19 @@ function updateCamera() {
         player.position
     );
 
+
     camera.rotation.order =
         "YXZ";
+
 
     camera.rotation.y =
         yaw;
 
+
     camera.rotation.x =
         pitch;
 }
+
 
 // ============================================================
 // GAME LOOP
@@ -861,11 +1051,13 @@ function updateCamera() {
 const clock =
     new THREE.Clock();
 
+
 function gameLoop() {
 
     requestAnimationFrame(
         gameLoop
     );
+
 
     const delta =
         Math.min(
@@ -873,9 +1065,14 @@ function gameLoop() {
             0.05
         );
 
-    updatePlayer(delta);
+
+    updatePlayer(
+        delta
+    );
+
 
     updateCamera();
+
 
     renderer.render(
         scene,
@@ -883,7 +1080,9 @@ function gameLoop() {
     );
 }
 
+
 gameLoop();
+
 
 // ============================================================
 // RESIZE
@@ -905,7 +1104,3 @@ window.addEventListener(
         );
     }
 );
-
-// Start with grass selected
-
-selectBlock(0);
